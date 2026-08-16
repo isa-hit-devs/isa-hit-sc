@@ -13,15 +13,18 @@ const app = express();
 
 connectDB();
 
-// 1. Strict CORS Configuration: Restrict API access to authorized frontend origins
+// 1. Environment-driven CORS Configuration
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map((url) => url.trim())
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim().replace(/\/+$/, ''))
   : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin header (like mobile apps, curl, or server-to-server)
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(cleanOrigin)) {
         callback(null, true);
       } else {
         callback(new Error('Access denied by CORS policy'));
